@@ -90,7 +90,7 @@ class Agent:
     def end_game(self):
         self.ended = True
         # upate model here with data in buffer
-        
+
 
     def build_state(self, player_number, players, apples):
         representation = np.zeros((15, 15))
@@ -125,7 +125,6 @@ async def handler(websocket, path):
     # msg = await websocket.recv()
     try:
         async for msg in websocket:
-            logger.info("< {}".format(msg))
             try:
                 msg = json.loads(msg)
             except json.decoder.JSONDecodeError as err:
@@ -192,7 +191,6 @@ async def handler(websocket, path):
             if answer is not None:
                 print(answer)
                 await websocket.send(json.dumps(answer))
-                logger.info("> {}".format(answer))
     except websockets.exceptions.ConnectionClosed as err:
         logger.info("Connection closed")
     logger.info("Exit handler")
