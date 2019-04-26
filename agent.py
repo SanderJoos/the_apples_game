@@ -12,65 +12,110 @@ import logging
 import asyncio
 import websockets
 import json
+from model.model import HarvestModel
 from collections import defaultdict
 import random
+import numpy as np
 
 
 logger = logging.getLogger(__name__)
 games = {}
 agentclass = None
 
+DISCOUNT = 0.9
+EXPLORATION_REDUCTION = 0.01
+
 
 class Agent:
-    """Example Dots and Boxes agent implementation base class.
-    It returns a random next move.
-    A Agent object should implement the following methods:
-    - __init__
-    - add_player
-    - register_action
-    - next_action
-    - end_game
-    This class does not necessarily use the best data structures for the
-    approach you want to use.
-    """
+
     def __init__(self, player, nb_rows, nb_cols):
-        """Create Dots and Boxes agent.
-        :param player: Player number, 1 or 2
-        :param nb_rows: Rows in grid
-        :param nb_cols: Columns in grid
-        """
         self.player = {player}
         self.ended = False
         self.nb_rows = nb_rows
         self.nb_cols = nb_cols
+        self.buffer = []
+        self.score = 0
+        # self.model = HarvestModel()
+        self.exploration = 0.95
+
+        # var for buffering:
+        self.action = -100
+        self.reward = 0
+        self.state = np.zeros((15, 15))
+        self.next_state = np.zeros((15, 15))
+        self.discount = DISCOUNT
 
     def add_player(self, player):
-        """Use the same agent for multiple players."""
         self.player.add(player)
 
-    def register_action(self, row, column, orientation, player):
-        """Register action played in game.
-        :param row:
-        :param columns:
-        :param orientation: "v" or "h"
-        :param player: 1 or 2
-        """
+    def register_action(self, player_number, players, apples):
+        # store action in buffer for training
+        self.reward, self.next_state = self.get_environment(player_number, players, apples)
+        if not self.action == -100:
+            dic = {"state": self.state, "action": self.action, "reward": self.reward,
+                "discount": self.discount, "next_state": self.next_state}
+            self.buffer.append(dic)
+            print(len(self.buffer))
         pass
 
-    def next_action(self):
-        """Return the next action this agent wants to perform.
-        In this example, the function implements a random move. Replace this
-        function with your own approach.
-        :return: (row, column, orientation)
-        """
-        logger.info("Computing next move (grid={}x{}, player={})"\
-                .format(self.nb_rows, self.nb_cols, self.player))
-        # Random move
-        return 'move'
+    def next_action(self, player_number, players, apples):
+        self.state = self.build_state(player_number, players, apples)
+        move = self.get_move()
+        if move == 'left':
+            self.action = 0
+        elif move == 'move':
+            self.action = 1
+        elif move == 'right':
+            self.action = 2
+        else:
+            self.action = 0
+        return move
+
+    def get_move(self):
+        rnd = random.random()     # this or is always true, outcomment to let reduction work
+        if rnd <= self.exploration or rnd < 1:
+            rnd = random.random()
+            if rnd <= 0.33:
+                move = 'left'
+            elif rnd <= 0.66:
+                move = 'move'
+            else:
+                move = 'right'
+        else:
+            # get model prediction here by using self.state as environment
+            move = 'move'
+        self.exploration -= EXPLORATION_REDUCTION
+        return move
 
     def end_game(self):
         self.ended = True
+        # upate model here with data in buffer
+        
 
+    def build_state(self, player_number, players, apples):
+        representation = np.zeros((15, 15))
+        player = players[player_number - 1]
+        row, col = player["location"]
+        for index_r in range(-7, 8):
+            for index_c in range(-7, 8):
+                R = (row + index_r + self.nb_rows) % self.nb_rows
+                C = (col + index_c + self.nb_cols) % self.nb_cols
+                for a_row, a_col in apples:
+                    if a_row == R and a_col == C:
+                        representation[index_c + 7, index_r + 7] = 1
+                for player in players:
+                    p_row, p_col = player["location"]
+                    if not p_row == "?" and p_row == R and p_col == C:
+                        representation[index_c + 7, index_r + 7] = -player["score"]
+        return representation
+
+    def get_environment(self, player_number, players, apples):
+        representation = self.build_state(player_number, players, apples)
+        player = players[player_number - 1]
+        score = player["score"]
+        reward = score - self.score
+        self.score = score
+        return reward, representation
 
 ## MAIN EVENT LOOP
 
@@ -99,7 +144,7 @@ async def handler(websocket, path):
                                                     nb_cols)
                 if msg["player"] == 1:
                     # Start the game
-                    nm = games[game].next_action()
+                    nm = games[game].get_move()
                     print('nm = {}'.format(nm))
                     if nm is None:
                         # Game over
@@ -117,7 +162,10 @@ async def handler(websocket, path):
                 # An action has been played
                 if msg["nextplayer"] in games[game].player:
                     # Compute your move
-                    nm = games[game].next_action()
+                    player_number = msg["nextplayer"]
+                    apples = msg["apples"]
+                    players = msg["players"]
+                    nm = games[game].next_action(player_number, players, apples)
                     if nm is None:
                         # Game over
                         logger.info("Game over")
@@ -126,6 +174,11 @@ async def handler(websocket, path):
                         'type': 'action',
                         'action': nm
                     }
+                elif msg["player"] in games[game].player:
+                    player_number = msg["player"]
+                    apples = msg["apples"]
+                    players = msg["players"]
+                    games[game].register_action(player_number, players, apples)
                 else:
                     answer = None
 
