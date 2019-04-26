@@ -23,7 +23,7 @@ games = {}
 agentclass = None
 
 DISCOUNT = 0.9
-EXPLORATION_REDUCTION = 0.01
+EXPLORATION_REDUCTION = 0.95
 
 
 class Agent:
@@ -72,8 +72,8 @@ class Agent:
         return move
 
     def get_move(self):
-        rnd = random.random()     # this or is always true, outcomment to let reduction work
-        if rnd <= self.exploration or rnd < 1:
+        rnd = random.random()
+        if rnd <= self.exploration:
             rnd = random.random()
             if rnd <= 0.33:
                 move = 'left'
@@ -82,9 +82,15 @@ class Agent:
             else:
                 move = 'right'
         else:
-            # get model prediction here by using self.state as environment
-            move = 'move'
-        self.exploration -= EXPLORATION_REDUCTION
+            prob = self.model.predict(self.state)
+            index = np.argmax(prob)
+            if index == 0:
+                move = 'left'
+            elif index == 1:
+                move = 'move'
+            else:
+                move = 'right'
+        self.exploration *= EXPLORATION_REDUCTION
         return move
 
     def end_game(self):
