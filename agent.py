@@ -35,7 +35,7 @@ class Agent:
         self.nb_cols = nb_cols
         self.buffer = []
         self.score = 0
-        # self.model = HarvestModel()
+        self.model = HarvestModel()
         self.exploration = 0.95
 
         # var for buffering:
