@@ -44,6 +44,10 @@ class Agent:
         self.state = np.zeros((15, 15))
         self.next_state = np.zeros((15, 15))
         self.discount = DISCOUNT
+        self.best_move = ''
+        self.orientation = ''
+        self.max_reward = -100
+        self.pred = [0, 0, 0]
 
     def add_player(self, player):
         self.player.add(player)
@@ -53,13 +57,17 @@ class Agent:
         self.reward, self.next_state = self.get_environment(player_number, players, apples)
         if not self.action == -100:
             dic = {"state": self.state, "action": self.action, "reward": self.reward,
-                "discount": self.discount, "next_state": self.next_state}
+                "discount": self.discount, "next_state": self.next_state, "best_move": self.best_move,
+                   "orientation": self.orientation, "max_reward": self.max_reward, "predict": self.pred}
             self.buffer.append(dic)
             print(len(self.buffer))
         pass
 
     def next_action(self, player_number, players, apples):
         self.state = self.build_state(player_number, players, apples)
+        player = players[player_number - 1]
+        self.best_move = self.get_best_move(self.state, player["orientation"])
+        self.orientation = player["orientation"]
         move = self.get_move()
         if move == 'left':
             self.action = 0
@@ -76,13 +84,17 @@ class Agent:
         if rnd <= self.exploration:
             rnd = random.random()
             if rnd <= 0.33:
+                self.pred = [1, 0, 0]
                 move = 'left'
             elif rnd <= 0.66:
+                self.pred = [0, 1, 0]
                 move = 'move'
+                self.pred = [0, 0, 1]
             else:
                 move = 'right'
         else:
             prob = self.model.predict(self.state)
+            self.pred = prob
             index = np.argmax(prob)
             if index == 0:
                 move = 'left'
@@ -95,8 +107,57 @@ class Agent:
 
     def end_game(self):
         self.ended = True
-        # upate model here with data in buffer
+        self.model.train(self.buffer)
 
+
+    def get_best_move(self, state, orientation):
+        left_reward = self.get_left_reward(state, orientation)
+        right_reward = self.get_right_reward(state, orientation)
+        move_reward = self.get_move_reward(state, orientation)
+        if left_reward > right_reward:
+            if left_reward > move_reward:
+                self.max_reward = left_reward
+                return 'left'
+            else:
+                self.max_reward = move_reward
+                return 'move'
+        else:
+            if right_reward > move_reward:
+                self.max_reward = right_reward
+                return 'right'
+            else:
+                self.max_reward = move_reward
+                return 'move'
+
+    def get_left_reward(self, state, orientation):
+        if orientation == 'left':
+            return state[8][7]
+        elif orientation == 'right':
+            return state[6][7]
+        elif orientation == 'down':
+            return state[7][8]
+        else:
+            return state[7][6]
+
+    def get_move_reward(self, state, orientation):
+        if orientation == 'left':
+            return state[7][6]
+        elif orientation == 'right':
+            return state[7][8]
+        elif orientation == 'down':
+            return state[8][7]
+        else:
+            return state[6][7]
+
+    def get_right_reward(self, state, orientation):
+        if orientation == 'left':
+            return state[6][7]
+        elif orientation == 'right':
+            return state[8][7]
+        elif orientation == 'down':
+            return state[7][6]
+        else:
+            return state[7][8]
 
     def build_state(self, player_number, players, apples):
         representation = np.zeros((15, 15))
