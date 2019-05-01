@@ -266,9 +266,7 @@ export default class Game extends Phaser.Scene {
    */
   endGame() {
     this.events.emit('game-over');
-    let sortedByScore = window.agents.sort(function (a, b) {
-      return a.points < b.points ? -1 : 1;
-    });
+    let sortedByScore = window.agents.sort((a, b) => b.points - a.points);
     let reply = {
       type: 'end',
       game: this.gameId,
@@ -278,15 +276,10 @@ export default class Game extends Phaser.Scene {
         score: agent.points
       })),
       apples: this.apples.getGridLocation(),
-      winner: sortedByScore[sortedByScore.length - 1].id
+      winner: sortedByScore[0].id
     };
     this.sendToAgents(reply);
-    this.scene
-      .stop('Loader')
-      .stop('Game')
-      .stop('Scoreboard')
-      .stop('Grid')
-      .start('Loader');
+    window.gameOver();
   }
 
   startConnection(agent) {
@@ -324,6 +317,7 @@ export default class Game extends Phaser.Scene {
       }
       return (dx <= 7 && dy <= 7);
     }
+    msgObj.receiver = agent.id;
     msgObj.apples = msgObj.apples.filter(a => isInWindow(a));
     msgObj.players
       .filter(p => !isInWindow(p.location))

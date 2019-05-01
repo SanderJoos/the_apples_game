@@ -3,13 +3,13 @@ Apples game application
 Several agents roam a shared world and collect apples to receive positive rewards. They may also direct a beam at one of the other agents, “tagging them”, to temporarily remove them from the game, but this action does not trigger a reward.
 <https://deepmind.com/blog/understanding-agent-cooperation/>
 
+This setup is part of the course "[Machine Learning: Project](https://onderwijsaanbod.kuleuven.be/syllabi/e/H0T25AE.htm)" (KU Leuven,
+Faculty of engineering, Department of Computer Science,
+[DTAI research group](https://dtai.cs.kuleuven.be)).
+
 Live demo: <https://people.cs.kuleuven.be/~wannes.meert/the_apples_game/dist/>
 
 ![Screenshot of the Apples Game](https://people.cs.kuleuven.be/wannes.meert/the_apples_game/screenshot.png?v=2)
-
-This setup is part of the course "Machine Learning: Project" (KU Leuven,
-Faculty of engineering, Department of Computer Science,
-[DTAI research group](https://dtai.cs.kuleuven.be)).
 
 
 Installation
@@ -36,12 +36,17 @@ Or alternatively, you can start the app using the included simple server:
 The game can then be played by directing your browser to http://127.0.0.1:8080.
 
 Alternatively, you could run the game headless from the CLI. Therefore,
-you should run the following command:
+you should first install the required dependencies:
 
-    $ node play.js ws://localhost:8001 ws://localhost:8002
+    $ npm install
 
-The arguments are the websocket address of a game-playing agent. These agents
-are described in the next section.
+Next, run the following command:
+
+    $ node play.js ws://localhost:8001 ws://localhost:8002 3
+
+The arguments are the websocket addresses of the game-playing agents (as many
+as you want) and the number of apple patches (optional; default is 5). The
+agents are described in the next section.
 
 Start the agent client
 ----------------------
@@ -78,7 +83,7 @@ Each agent gets a message that a new game has started:
             "orientation": "?"
           }
         ],
-        "apples": [[10, 15], [3, 5], ...]
+        "apples": [[10, 15], [3, 5], ...],
     }
 
 where `player` is the number assigned to this agent
@@ -122,11 +127,17 @@ When an action is played, each agent receives a message of the following format:
             "score": 5
           }
         ],
-        "apples": [[25, 15], [25, 14], ...]
+        "apples": [[25, 15], [25, 14], ...],
+        "receiver": 2
     }
 
-However, the fields `players` and `apples` will be different for each receiving agent,
-depending on each agent's 15x15 observable window.
+The field `player` corresponds to the ID of the player that executed the action,
+the `nextplayer` field indicates which player should play the next turn and the 
+`receiver` field has the ID of the player that should receive this message. Finally,
+the fields `players` and `apples` hold information about respectively the other
+players and the apples in the field. However, the fields `players` and `apples`
+will be different for each receiving agent, depending on each agent's 15x15
+observable window.
 
 If it is your turn you should answer with a message that states your next
 move:
@@ -159,7 +170,8 @@ When the game ends after an action, the message is slightly altered:
           }
         ],
         "apples": [[25, 15], [25, 14], ...]
-        "winner": 1
+        "winner": 1,
+        "receiver": 2
     }
 
 The `type` field becomes `end` and a new field `winner` is set to the player
@@ -187,8 +199,8 @@ Main developer:
 
 Team:
 
-- Wannes Meert, <https://people.cs.kuleuven.be/wannes.meert>
-- Karl Tuyls, <http://www.karltuyls.net>
-- Sebastijan Dumančić, <https://people.cs.kuleuven.be/sebastijan.dumancic>
+- Dr. Wannes Meert, <https://people.cs.kuleuven.be/wannes.meert>
+- Prof. dr. Karl Tuyls, <http://www.karltuyls.net>
+- Dr. Sebastijan Dumančić, <https://people.cs.kuleuven.be/sebastijan.dumancic>
 - Robin Manhaeve, <https://people.cs.kuleuven.be/robin.manhaeve>
 

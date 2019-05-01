@@ -2,9 +2,9 @@
 # encoding: utf-8
 """
 agent.py
-Template for the Machine Learning Project course at KU Leuven (2017-2018)
-of Hendrik Blockeel and Wannes Meert.
-Copyright (c) 2018 KU Leuven. All rights reserved.
+Template for the Machine Learning Project course at KU Leuven (2018-2019)
+of Karl Tuys and Wannes Meert.
+Copyright (c) 2019 KU Leuven. All rights reserved.
 """
 import sys
 import argparse
@@ -204,7 +204,7 @@ async def handler(websocket, path):
                 if msg["game"] in games:
                     games[msg["game"]].add_player(msg["player"])
                 else:
-                    nb_rows, nb_cols = msg["grid"]
+                    nb_cols, nb_rows = msg["grid"]
                     games[msg["game"]] = agentclass(msg["player"],
                                                     nb_rows,
                                                     nb_cols)
@@ -226,7 +226,7 @@ async def handler(websocket, path):
 
             elif msg["type"] == "action":
                 # An action has been played
-                if msg["nextplayer"] in games[game].player:
+                if msg["nextplayer"] in games[game].player and msg["nextplayer"] == msg["receiver"]:
                     # Compute your move
                     player_number = msg["nextplayer"]
                     apples = msg["apples"]
