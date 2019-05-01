@@ -10,12 +10,16 @@ import sys
 import argparse
 import logging
 import asyncio
+import time
+
 import websockets
 import json
 from model.model import HarvestModel
 from collections import defaultdict
 import random
 import numpy as np
+import os
+import pickle
 
 
 logger = logging.getLogger(__name__)
@@ -31,8 +35,12 @@ class Agent:
     def __init__(self, player, nb_rows, nb_cols):
         self.player = {player}
         self.ended = False
-        self.nb_rows = nb_rows
-        self.nb_cols = nb_cols
+
+        # this is intentional to work with previous error (no need to
+        # adjust all other code)
+        self.nb_rows = nb_cols
+        self.nb_cols = nb_rows
+
         self.buffer = []
         self.score = 0
         self.model = HarvestModel()
@@ -47,7 +55,7 @@ class Agent:
         self.best_move = ''
         self.orientation = ''
         self.max_reward = -100
-        self.pred = [0, 0, 0]
+        self.pred = np.zeros((1, 3))
 
     def add_player(self, player):
         self.player.add(player)
@@ -84,17 +92,17 @@ class Agent:
         if rnd <= self.exploration:
             rnd = random.random()
             if rnd <= 0.33:
-                self.pred = [1, 0, 0]
+                self.pred[0] = [1, 0, 0]
                 move = 'left'
             elif rnd <= 0.66:
-                self.pred = [0, 1, 0]
+                self.pred[0] = [0, 1, 0]
                 move = 'move'
-                self.pred = [0, 0, 1]
+                self.pred[0] = [0, 0, 1]
             else:
                 move = 'right'
         else:
             prob = self.model.predict(self.state)
-            self.pred = prob
+            self.pred[0] = prob[0]
             index = np.argmax(prob)
             if index == 0:
                 move = 'left'
@@ -107,6 +115,9 @@ class Agent:
 
     def end_game(self):
         self.ended = True
+        for i in range(16):
+            if i in self.player:
+                time.sleep(i*3)
         self.model.train(self.buffer)
 
 
