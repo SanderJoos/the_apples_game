@@ -28,6 +28,7 @@ agentclass = None
 
 DISCOUNT = 0.9
 EXPLORATION_REDUCTION = 0.95
+EXPLORATION = False
 
 
 class Agent:
@@ -89,7 +90,7 @@ class Agent:
 
     def get_move(self):
         rnd = random.random()
-        if rnd <= self.exploration:
+        if EXPLORATION and rnd <= self.exploration:
             rnd = random.random()
             if rnd <= 0.33:
                 self.pred[0] = [1, 0, 0]
@@ -117,7 +118,7 @@ class Agent:
         self.ended = True
         for i in range(16):
             if i in self.player:
-                time.sleep(i*3)
+                time.sleep(i*5)
         self.model.train(self.buffer)
 
 
