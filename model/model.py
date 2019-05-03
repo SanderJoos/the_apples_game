@@ -32,9 +32,9 @@ class HarvestModel:
         model.add(Flatten())
         model.add(Dense(10, activation='relu'))
         model.add(Dropout(0.2))
-        model.add(Dense(3, activation='softmax'))
+        model.add(Dense(3, activation='relu'))
         adam = Adam(lr=LEARNING_RATE)
-        model.compile(adam, 'categorical_crossentropy')
+        model.compile(adam, 'mse')
         if os.path.exists("model.h5"):
             model.load_weights("model.h5")
             print("loaded")
@@ -58,14 +58,15 @@ class HarvestModel:
         lock.acquire()
         if os.path.exists("model.h5"):
             self.model.load_weights("model.h5")
-        inp = np.zeros((99, 1, 15, 15))
-        predictions = np.zeros((99, 3))
+        nb_of_fits = int((len(buffer) / 10) + 1)
+        inp = np.zeros((nb_of_fits, 1, 15, 15))
+        predictions = np.zeros((nb_of_fits, 3))
         batchind = 0
         for i in range(len(buffer)):
             if i % 10 == 0 and not i % len(buffer) == 0:
                 dit = buffer[i]
                 state = dit["state"]
-                pred = self.get_best_prediction(buffer[i:i + 4])
+                pred = self.get_best_prediction(buffer[i:i + 7])
                 # max_reward, gotten_rewards, first_reward = self.get_rewards(buffer[i:i + 4])
                 # delta = first_reward + max_reward - gotten_rewards
                 # dit = buffer[i]
@@ -99,7 +100,6 @@ class HarvestModel:
         reward[0][0] = left_reward
         reward[0][1] = move_reward
         reward[0][2] = right_reward
-        reward[0] = self.softmax(reward[0])
         return reward
 
     def get_rewards(self, bufferslice, x, y, orientation):

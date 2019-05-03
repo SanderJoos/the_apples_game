@@ -27,8 +27,8 @@ games = {}
 agentclass = None
 
 DISCOUNT = 0.9
-EXPLORATION_REDUCTION = 0.95
-EXPLORATION = False
+EXPLORATION_REDUCTION = 0.99
+EXPLORATION = True
 
 
 class Agent:
@@ -45,7 +45,7 @@ class Agent:
         self.buffer = []
         self.score = 0
         self.model = HarvestModel()
-        self.exploration = 0.95
+        self.exploration = 0.99
 
         # var for buffering:
         self.action = -100
@@ -90,6 +90,7 @@ class Agent:
 
     def get_move(self):
         rnd = random.random()
+        print("exploration chance: ", self.exploration)
         if EXPLORATION and rnd <= self.exploration:
             rnd = random.random()
             if rnd <= 0.33:
@@ -103,6 +104,7 @@ class Agent:
                 move = 'right'
         else:
             prob = self.model.predict(self.state)
+            print(prob)
             self.pred[0] = prob[0]
             index = np.argmax(prob)
             if index == 0:
@@ -118,7 +120,7 @@ class Agent:
         self.ended = True
         for i in range(16):
             if i in self.player:
-                time.sleep(i*5)
+                time.sleep(i*10)
         self.model.train(self.buffer)
 
 
