@@ -120,6 +120,75 @@ class Agent:
                 time.sleep(i*3)
         self.model.train(self.buffer)
 
+    # get_best_reward takes the state (18 by 18 array) and the range to check
+    # and returns a list of moves and their potential reward if set sorted with the highest first
+    def get_best_reward_in(self, state, range):
+        list = ['up', 'down', 'left', 'right']
+        rewards = []
+        perm_list = self.permutation_repeat(self, list, range)
+        print("elements in perm_list" + str(len(perm_list)))
+        for list in perm_list:
+            new_state = state
+            intermediate_reward = 0
+            for move in list:
+                step_res = self.step(self, new_state, move)
+                intermediate_reward += step_res[1]
+                new_state = step_res[0]
+            rewards.append([list, intermediate_reward])
+        print("elements in rewards: " + str(len(rewards)))
+        rewards.sort(key=self.get_key, reverse=True)
+        return rewards
+
+    # step takes a state and directin in which to step and returns the new state
+    # note that because we do not know what is beyond our viewing window, the edges become zero
+    def step(self, state, direction):
+        result = np.empty_like(state)
+        if direction == 'down':
+            for row in range(len(state)):
+                if row == len(state) - 1:
+                    result[row, :] = 0
+                else:
+                    result[row, :] = state[row + 1, :]
+        elif direction == 'up':
+            result[0, :] = 0
+            for row in range(1, len(state)):
+                result[row, :] = state[row - 1, :]
+        elif direction == 'left':
+            result[:, 0] = 0
+            for col in range(1, len(state)):
+                result[:, col] = state[:, col - 1]
+        elif direction == 'right':
+            for col in range(len(state)):
+                if col == len(state) - 1:
+                    result[:, col] = 0
+                else:
+                    result[:, col] = state[:, col + 1]
+        reward = result[7][7]
+        result[7][7] = 0
+        return result, reward
+
+    # move_list is a list of lists with every list a permutation of moves
+    move_list = []
+
+    def _permutation_repeat(self, list, prefix, n, k):
+        if k == 0:  # base, len(prefix) == len(text)
+            self.move_list.append(prefix)
+            return
+
+        for i in range(n):
+            new_prefix = prefix + [list[i]]  # a, aa, aaa, aab, aac ab, aba, abb, abc
+
+            self._permutation_repeat(self, list, new_prefix, n, k - 1)
+
+    # this returns a list of lists with permutations of given list (including duplicates) with length k
+    def permutation_repeat(self, list, k):
+        self._permutation_repeat(self, list, [], len(list), k)
+        return self.move_list
+
+    # returns the key in an [<moves>, rewards] element
+    def get_key(element):
+        return element[1]
+
 
     def get_best_move(self, state, orientation):
         left_reward = self.get_left_reward(state, orientation)
