@@ -11,9 +11,13 @@ import keras.backend as K
 from keras.utils import plot_model
 import pickle
 from keras.activations import softmax
+from random import randint
 
 LEARNING_RATE = 0.01
 DISCOUNT = 0.9
+
+NUMBER_OF_BUFFERSLICES = 30
+BATCHSIZE = 5
 
 class HarvestModel:
 
@@ -52,36 +56,24 @@ class HarvestModel:
 
     def fit(self, state, pred):
         # K.get_session().run(tf.global_variables_initializer())
-        self.model.fit(state, pred)
+        self.model.fit(state, pred, batch_size=BATCHSIZE)
 
     def train(self, buffer):
         lock.acquire()
         if os.path.exists("model.h5"):
             self.model.load_weights("model.h5")
-        nb_of_fits = int((len(buffer) / 10) + 1)
-        inp = np.zeros((nb_of_fits, 1, 15, 15))
-        predictions = np.zeros((nb_of_fits, 3))
+        # nb_of_fits = int((len(buffer) / 10) + 1)
+        inp = np.zeros((NUMBER_OF_BUFFERSLICES, 1, 15, 15))
+        predictions = np.zeros((NUMBER_OF_BUFFERSLICES, 3))
         batchind = 0
-        for i in range(len(buffer)):
-            if i % 10 == 0 and not i % len(buffer) == 0:
-                dit = buffer[i]
-                state = dit["state"]
-                pred = self.get_best_prediction(buffer[i:i + 7])
-                # max_reward, gotten_rewards, first_reward = self.get_rewards(buffer[i:i + 4])
-                # delta = first_reward + max_reward - gotten_rewards
-                # dit = buffer[i]
-                # state = dit["state"]
-                # pred = dit["predict"]
-                # move = dit["best_move"]
-                # if move == 'left':
-                #     pred[0][0] += delta
-                # elif move == 'move':
-                #     pred[0][1] += delta
-                # else:
-                #     pred[0][2] += delta
-                predictions[batchind] = pred
-                inp[batchind, 0] = state
-                batchind += 1
+        for i in range(NUMBER_OF_BUFFERSLICES):
+            index = randint(0, len(buffer) - 7)
+            dit = buffer[index]
+            state = dit["state"]
+            pred = self.get_best_prediction(buffer[index:index + 7])
+            predictions[batchind] = pred
+            inp[batchind, 0] = state
+            batchind += 1
         self.fit(inp, predictions)
         self.model.save_weights("model.h5")
         lock.release()
