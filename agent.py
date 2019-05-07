@@ -187,7 +187,7 @@ class Agent:
                 for player in players:
                     p_row, p_col = player["location"]
                     if not p_row == "?" and p_row == R and p_col == C:
-                        representation[index_c + 7, index_r + 7] = -player["score"]
+                        representation[index_c + 7, index_r + 7] = -player["score"]/100
         return representation
 
     def get_environment(self, player_number, players, apples):

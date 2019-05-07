@@ -13,11 +13,11 @@ import pickle
 from keras.activations import softmax
 from random import randint
 
-LEARNING_RATE = 0.01
-DISCOUNT = 0.9
+LEARNING_RATE = 0.05
+DISCOUNT = 0.95
 
-NUMBER_OF_BUFFERSLICES = 30
-BATCHSIZE = 5
+NUMBER_OF_BUFFERSLICES = 400
+BATCHSIZE = 10
 
 class HarvestModel:
 
@@ -27,30 +27,31 @@ class HarvestModel:
         sess = tf.Session(config=config)
         K.set_session(sess)
         model = Sequential()
-        model.add(Conv2D(121, 5, input_shape=(1, 15, 15), data_format="channels_first"))
-        model.add(Activation('relu'))
-        # model.add(Dropout(0.5))
-        model.add(Conv2D(49, 5, data_format="channels_first"))
-        model.add(Activation('relu'))
-        model.add(MaxPooling2D(pool_size=(3, 3)))
-        model.add(Flatten())
+        model.add(Dense(225, activation='relu'))
+        model.add(Dropout(0.5))
+        model.add(Dense(150, activation='relu'))
+        model.add(Dropout(0.5))
+        model.add(Dense(100, activation='relu'))
+        model.add(Dropout(0.5))
+        model.add(Dense(50, activation='relu'))
+        model.add(Dropout(0.5))
         model.add(Dense(10, activation='relu'))
         model.add(Dropout(0.2))
         model.add(Dense(3, activation='relu'))
         adam = Adam(lr=LEARNING_RATE)
-        model.compile(adam, 'mse')
+        model.compile(adam, 'mae')
         if os.path.exists("model.h5"):
-            model.load_weights("model.h5")
+            model = load_model("model.h5")
             print("loaded")
         self.model = model
-        self.input_shape = (1, 1, 15, 15)
+        self.input_shape = (1, 225)
 
     # def softmax_asix_1(self,x):
     #     return softmax(x, axis=1)
 
     def predict(self, env):
         input = np.zeros(self.input_shape)
-        input[0, 0] = env
+        input[0] = env.flatten()
         # K.get_session().run(tf.global_variables_initializer())
         return self.model.predict(input)
 
@@ -61,9 +62,9 @@ class HarvestModel:
     def train(self, buffer):
         lock.acquire()
         if os.path.exists("model.h5"):
-            self.model.load_weights("model.h5")
+            self.model.save("model.h5")
         # nb_of_fits = int((len(buffer) / 10) + 1)
-        inp = np.zeros((NUMBER_OF_BUFFERSLICES, 1, 15, 15))
+        inp = np.zeros((NUMBER_OF_BUFFERSLICES, 225))
         predictions = np.zeros((NUMBER_OF_BUFFERSLICES, 3))
         batchind = 0
         for i in range(NUMBER_OF_BUFFERSLICES):
@@ -72,43 +73,44 @@ class HarvestModel:
             state = dit["state"]
             pred = self.get_best_prediction(buffer[index:index + 7])
             predictions[batchind] = pred
-            inp[batchind, 0] = state
+            inp[batchind] = state.flatten()
             batchind += 1
         self.fit(inp, predictions)
-        self.model.save_weights("model.h5")
+        self.model.save("model.h5")
         lock.release()
         print("ended fitting")
 
     def get_best_prediction(self, bufferslice):
         orientation = bufferslice[0]["orientation"]
-        xl, yl, orl, reward_l = self.get_left_state(bufferslice[0], 7, 7, orientation)
-        xm, ym, orm, reward_m = self.get_move_state(bufferslice[0], 7, 7, orientation)
-        xr, yr, orr, reward_r = self.get_right_state(bufferslice[0], 7, 7, orientation)
+        state = bufferslice[0]["state"]
+        xl, yl, orl, reward_l = self.get_left_state(state, 7, 7, orientation)
+        xm, ym, orm, reward_m = self.get_move_state(state, 7, 7, orientation)
+        xr, yr, orr, reward_r = self.get_right_state(state, 7, 7, orientation)
         reward = np.zeros((1, 3))
         new_buffer = bufferslice[1:]
-        left_reward = reward_l * DISCOUNT + self.get_rewards(new_buffer, xl, yl, orl)
-        move_reward = reward_m * DISCOUNT + self.get_rewards(new_buffer, xm, ym, orm)
-        right_reward = reward_r * DISCOUNT + self.get_rewards(new_buffer, xr, yr, orr)
+        left_reward = reward_l * DISCOUNT + self.get_rewards(new_buffer, xl, yl, orl, state)
+        move_reward = reward_m * DISCOUNT + self.get_rewards(new_buffer, xm, ym, orm, state)
+        right_reward = reward_r * DISCOUNT + self.get_rewards(new_buffer, xr, yr, orr, state)
         reward[0][0] = left_reward
         reward[0][1] = move_reward
         reward[0][2] = right_reward
+        # reward[0] = self.softmax(reward[0])
         return reward
 
-    def get_rewards(self, bufferslice, x, y, orientation):
+    def get_rewards(self, bufferslice, x, y, orientation, state):
         if len(bufferslice) == 0:
             return 0
         else:
             fac = DISCOUNT ** (5 - len(bufferslice))
-            xl, yl, orl, reward_l = self.get_left_state(bufferslice[0], x, y, orientation)
-            xm, ym, orm, reward_m = self.get_move_state(bufferslice[0], x, y, orientation)
-            xr, yr, orr, reward_r = self.get_right_state(bufferslice[0], x, y, orientation)
+            xl, yl, orl, reward_l = self.get_left_state(state, x, y, orientation)
+            xm, ym, orm, reward_m = self.get_move_state(state, x, y, orientation)
+            xr, yr, orr, reward_r = self.get_right_state(state, x, y, orientation)
             new_buffer = bufferslice[1:]
-            return max(reward_l * fac + self.get_rewards(new_buffer, xl, yl, orl),
-                       reward_m * fac + self.get_rewards(new_buffer, xm, ym, orm),
-                       reward_r * fac + self.get_rewards(new_buffer, xr, yr, orr))
+            return max(reward_l * fac + self.get_rewards(new_buffer, xl, yl, orl, state),
+                       reward_m * fac + self.get_rewards(new_buffer, xm, ym, orm, state),
+                       reward_r * fac + self.get_rewards(new_buffer, xr, yr, orr, state))
 
-    def get_left_state(self, buf, x, y, orientation):
-        state = buf["state"]
+    def get_left_state(self, state, x, y, orientation):
         if orientation == 'left':
             return x+1, y, 'down', state[x + 1][y]
         elif orientation == 'right':
@@ -118,8 +120,7 @@ class HarvestModel:
         else:
             return x, y-1, 'left', state[x][y - 1]
 
-    def get_move_state(self, buf, x, y, orientation):
-        state = buf["state"]
+    def get_move_state(self, state, x, y, orientation):
         if orientation == 'left':
             return x, y-1, 'left', state[x][y-1]
         elif orientation == 'right':
@@ -129,8 +130,7 @@ class HarvestModel:
         else:
             return x-1, y, 'up', state[x-1][y]
 
-    def get_right_state(self, buf, x, y, orientation):
-        state = buf["state"]
+    def get_right_state(self, state, x, y, orientation):
         if orientation == 'left':
             return x-1, y, 'up', state[x-1][y]
         elif orientation == 'right':
