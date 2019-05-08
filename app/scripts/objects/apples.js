@@ -122,16 +122,16 @@ export default class Apples extends Phaser.GameObjects.Group {
         let P;
         switch (nbNeighbors) {
         case 0:
-          P = 0;
+          P = 0.001;
           break;
         case 1:
-          P = 0.005;
+          P = 0.0001;
           break;
         case 2:
-          P = 0.02;
+          P = 0.0002;
           break;
         default:
-          P = 0.05;
+          P = 0.0005;
         }
         if (Math.random() < P) {
           let apple = this.apples[y][x];
