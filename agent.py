@@ -188,7 +188,18 @@ class Agent:
                     p_row, p_col = player["location"]
                     if not p_row == "?" and p_row == R and p_col == C:
                         representation[index_c + 7, index_r + 7] = -player["score"]/100
+        orientation = player["orientation"]
+        representation[7][7] = self.numerical_orientation(orientation)
         return representation
+
+    def numerical_orientation(self, orientation):
+        if orientation == 'left':
+            return 10
+        elif orientation == 'right':
+            return 20
+        elif orientation == 'down':
+            return 30
+        return  40
 
     def get_environment(self, player_number, players, apples):
         representation = self.build_state(player_number, players, apples)

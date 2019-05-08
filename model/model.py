@@ -27,14 +27,13 @@ class HarvestModel:
         sess = tf.Session(config=config)
         K.set_session(sess)
         model = Sequential()
-        model.add(Dense(225, activation='relu'))
-        model.add(Dropout(0.5))
-        model.add(Dense(150, activation='relu'))
-        model.add(Dropout(0.5))
-        model.add(Dense(100, activation='relu'))
-        model.add(Dropout(0.5))
-        model.add(Dense(50, activation='relu'))
-        model.add(Dropout(0.5))
+        model.add(Conv2D(121, 5, input_shape=(1, 15, 15), data_format="channels_first"))
+        model.add(Activation('relu'))
+        # model.add(Dropout(0.5))
+        model.add(Conv2D(49, 5, data_format="channels_first"))
+        model.add(Activation('relu'))
+        model.add(MaxPooling2D(pool_size=(3, 3)))
+        model.add(Flatten())
         model.add(Dense(10, activation='relu'))
         model.add(Dropout(0.2))
         model.add(Dense(3, activation='relu'))
@@ -44,14 +43,14 @@ class HarvestModel:
             model = load_model("model.h5")
             print("loaded")
         self.model = model
-        self.input_shape = (1, 225)
+        self.input_shape = (1, 1, 15, 15)
 
     # def softmax_asix_1(self,x):
     #     return softmax(x, axis=1)
 
     def predict(self, env):
         input = np.zeros(self.input_shape)
-        input[0] = env.flatten()
+        input[0, 0] = env
         # K.get_session().run(tf.global_variables_initializer())
         return self.model.predict(input)
 
@@ -64,7 +63,7 @@ class HarvestModel:
         if os.path.exists("model.h5"):
             self.model.save("model.h5")
         # nb_of_fits = int((len(buffer) / 10) + 1)
-        inp = np.zeros((NUMBER_OF_BUFFERSLICES, 225))
+        inp = np.zeros((NUMBER_OF_BUFFERSLICES, 1, 15, 15))
         predictions = np.zeros((NUMBER_OF_BUFFERSLICES, 3))
         batchind = 0
         for i in range(NUMBER_OF_BUFFERSLICES):
@@ -73,7 +72,7 @@ class HarvestModel:
             state = dit["state"]
             pred = self.get_best_prediction(buffer[index:index + 7])
             predictions[batchind] = pred
-            inp[batchind] = state.flatten()
+            inp[batchind, 0] = state
             batchind += 1
         self.fit(inp, predictions)
         self.model.save("model.h5")
