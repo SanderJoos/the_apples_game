@@ -106,7 +106,7 @@ class Agent:
             prob = self.model.predict(self.state)
             print(prob)
             self.pred[0] = prob[0]
-            indices = [idx for idx, val in enumerate(prob) if val == max(prob)]
+            indices = [idx for idx, val in enumerate(prob[0]) if val == max(prob[0])]
             index = random.choice(indices)
             if index == 0:
                 move = 'left'
