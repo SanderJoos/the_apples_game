@@ -72,6 +72,7 @@ class HarvestModel:
             dit = buffer[index]
             state = dit["state"]
             pred = self.get_best_prediction(buffer[index:index + 7])
+            print(pred)
             predictions[batchind] = pred
             inp[batchind] = state.flatten()
             batchind += 1

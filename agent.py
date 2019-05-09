@@ -99,9 +99,9 @@ class Agent:
             elif rnd <= 0.66:
                 self.pred[0] = [0, 1, 0]
                 move = 'move'
-                self.pred[0] = [0, 0, 1]
             else:
                 move = 'right'
+                self.pred[0] = [0, 0, 1]
         else:
             prob = self.model.predict(self.state)
             print(prob)
