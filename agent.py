@@ -28,7 +28,7 @@ agentclass = None
 
 DISCOUNT = 0.9
 EXPLORATION_REDUCTION = 0.99
-EXPLORATION = True
+EXPLORATION = False
 
 
 class Agent:
@@ -106,7 +106,8 @@ class Agent:
             prob = self.model.predict(self.state)
             print(prob)
             self.pred[0] = prob[0]
-            index = np.argmax(prob)
+            indices = [idx for idx, val in enumerate(prob) if val == max(prob)]
+            index = random.choice(indices)
             if index == 0:
                 move = 'left'
             elif index == 1:
