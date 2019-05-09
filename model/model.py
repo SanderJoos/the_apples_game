@@ -1,6 +1,5 @@
 from keras.models import Sequential, load_model
-from keras.layers import Dense, Dropout, Activation, Flatten, Lambda
-from keras.layers import Conv2D, MaxPooling2D
+from keras.layers import Dense, Dropout, Activation, Flatten, Lambda, LeakyReLU
 import tensorflow as tf
 import numpy as np
 from threading import Thread, Lock
@@ -13,7 +12,7 @@ import pickle
 from keras.activations import softmax
 from random import randint
 
-LEARNING_RATE = 0.05
+LEARNING_RATE = 0.01
 DISCOUNT = 0.95
 
 NUMBER_OF_BUFFERSLICES = 400
@@ -25,19 +24,21 @@ class HarvestModel:
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         sess = tf.Session(config=config)
+        leaky = LeakyReLU()
         K.set_session(sess)
         model = Sequential()
-        model.add(Dense(225, activation='relu'))
-        model.add(Dropout(0.5))
-        model.add(Dense(150, activation='relu'))
-        model.add(Dropout(0.5))
-        model.add(Dense(100, activation='relu'))
-        model.add(Dropout(0.5))
-        model.add(Dense(50, activation='relu'))
-        model.add(Dropout(0.5))
-        model.add(Dense(10, activation='relu'))
-        model.add(Dropout(0.2))
-        model.add(Dense(3, activation='relu'))
+        model.add(Dense(225))
+        model.add(leaky)
+        model.add(Dense(150))
+        model.add(leaky)
+        model.add(Dense(100))
+        model.add(leaky)
+        model.add(Dense(50))
+        model.add(leaky)
+        model.add(Dense(10))
+        model.add(leaky)
+        model.add(Dense(3))
+        model.add(leaky)
         adam = Adam(lr=LEARNING_RATE)
         model.compile(adam, 'mae')
         if os.path.exists("model.h5"):
