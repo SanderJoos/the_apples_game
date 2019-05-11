@@ -22,6 +22,7 @@ MODELNAME = "model.h5"
 class HarvestModel:
 
     def __init__(self):
+        self.input_shape = (1, 225)
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         sess = tf.Session(config=config)
@@ -46,10 +47,8 @@ class HarvestModel:
             model = load_model(MODELNAME)
             print("loaded")
         self.model = model
-        self.input_shape = (1, 225)
-
-    # def softmax_asix_1(self,x):
-    #     return softmax(x, axis=1)
+        self.model.build(input_shape=self.input_shape)
+        print(self.model.summary())
 
     def predict(self, env):
         input = np.zeros(self.input_shape)
@@ -120,7 +119,6 @@ class HarvestModel:
                        reward_r * fac + self.get_rewards(new_buffer, xr, yr, orr, state, players, player_number),
                        reward_f * fac + self.get_rewards(new_buffer, x, y, orientation, state, players, player_number))
 
-    #TODO: what is the reward for shooting another player?
     #returns the absolute value of the shot player's score
     def get_fire_state(self, orientation, players, player_number):
         target_dist = 10
@@ -131,7 +129,6 @@ class HarvestModel:
         for player in players:
             i = player["location"][0]
             j = player["location"][1]
-            # if a cell has a negative number this is another player
             # check if i can shoot this player and collect the reward
             if orientation == 'right' and i == my_i:
                 if ((j - my_j) > 0) and (j - my_j) < target_dist:
@@ -149,7 +146,7 @@ class HarvestModel:
                 if ((i - my_i) > 0) and (my_i - i) < target_dist:
                     score_shot_player = player["score"]
                     target_dist = my_i - i
-        reward = score_shot_player / 1000
+        reward = - score_shot_player
         return reward
 
     def get_left_state(self, state, x, y, orientation):
