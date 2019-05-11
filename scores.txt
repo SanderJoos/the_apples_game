@@ -60,3 +60,17 @@ score Player: 2: 189
 score Player: 1: 204 
 score Player: 1: 596 
 score Player: 2: 579 
+score Player: 1: 261 
+score Player: 2: 238 
+score Player: 1: 424 
+score Player: 2: 361 
+score Player: 1: 412 
+score Player: 2: 353 
+score Player: 2: 314 
+score Player: 1: 376 
+score Player: 1: 285 
+score Player: 2: 231 
+score Player: 1: 368 
+score Player: 2: 279 
+score Player: 1: 601 
+score Player: 2: 588 

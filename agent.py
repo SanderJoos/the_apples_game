@@ -67,7 +67,7 @@ class Agent:
         if not self.action == -100:
             dic = {"state": self.state, "action": self.action, "reward": self.reward,
                 "discount": self.discount, "next_state": self.next_state, "best_move": self.best_move,
-                   "orientation": self.orientation, "max_reward": self.max_reward, "predict": self.pred, "players": players}
+                   "orientation": self.orientation, "max_reward": self.max_reward, "predict": self.pred, "players": players, "player_number": player_number}
             self.buffer.append(dic)
             print(len(self.buffer))
         pass
