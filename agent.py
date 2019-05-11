@@ -265,6 +265,11 @@ async def handler(websocket, path):
 
             elif msg["type"] == "end":
                 # End the game
+                f = open("scores.txt", "a+")
+                players = msg["players"]
+                nr = msg["receiver"]
+                f.write(('score Player: %s: %s \n' % (nr, players[nr - 1]["score"])))
+                f.close()
                 games[msg["game"]].end_game()
                 answer = None
             else:
