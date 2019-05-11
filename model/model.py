@@ -86,16 +86,17 @@ class HarvestModel:
     def get_best_prediction(self, bufferslice):
         orientation = bufferslice[0]["orientation"]
         state = bufferslice[0]["state"]
+        players = bufferslice[0]["players"]
         xl, yl, orl, reward_l = self.get_left_state(state, 7, 7, orientation)
         xm, ym, orm, reward_m = self.get_move_state(state, 7, 7, orientation)
         xr, yr, orr, reward_r = self.get_right_state(state, 7, 7, orientation)
-        reward_f = self.get_fire_state(state, orientation)
+        reward_f = self.get_fire_state(orientation, players)
         reward = np.zeros((1, 4))
         new_buffer = bufferslice[1:]
-        left_reward = reward_l * DISCOUNT + self.get_rewards(new_buffer, xl, yl, orl, state)
-        move_reward = reward_m * DISCOUNT + self.get_rewards(new_buffer, xm, ym, orm, state)
-        right_reward = reward_r * DISCOUNT + self.get_rewards(new_buffer, xr, yr, orr, state)
-        fire_reward = reward_f * DISCOUNT + self.get_rewards(new_buffer, 7, 7, orientation, state)
+        left_reward = reward_l * DISCOUNT + self.get_rewards(new_buffer, xl, yl, orl, state, players)
+        move_reward = reward_m * DISCOUNT + self.get_rewards(new_buffer, xm, ym, orm, state, players)
+        right_reward = reward_r * DISCOUNT + self.get_rewards(new_buffer, xr, yr, orr, state, players)
+        fire_reward = reward_f * DISCOUNT + self.get_rewards(new_buffer, 7, 7, orientation, state, players)
         reward[0][0] = left_reward
         reward[0][1] = move_reward
         reward[0][2] = right_reward
@@ -103,7 +104,7 @@ class HarvestModel:
         # reward[0] = self.softmax(reward[0])
         return reward
 
-    def get_rewards(self, bufferslice, x, y, orientation, state):
+    def get_rewards(self, bufferslice, x, y, orientation, state, players):
         if len(bufferslice) == 0:
             return 0
         else:
@@ -111,41 +112,41 @@ class HarvestModel:
             xl, yl, orl, reward_l = self.get_left_state(state, x, y, orientation)
             xm, ym, orm, reward_m = self.get_move_state(state, x, y, orientation)
             xr, yr, orr, reward_r = self.get_right_state(state, x, y, orientation)
-            reward_f = self.get_fire_state(state, orientation)
+            reward_f = self.get_fire_state(orientation, players)
             new_buffer = bufferslice[1:]
-            return max(reward_l * fac + self.get_rewards(new_buffer, xl, yl, orl, state),
-                       reward_m * fac + self.get_rewards(new_buffer, xm, ym, orm, state),
-                       reward_r * fac + self.get_rewards(new_buffer, xr, yr, orr, state),
-                       reward_f * fac + self.get_rewards(new_buffer, x, y, orientation, state))
+            return max(reward_l * fac + self.get_rewards(new_buffer, xl, yl, orl, state, players),
+                       reward_m * fac + self.get_rewards(new_buffer, xm, ym, orm, state, players),
+                       reward_r * fac + self.get_rewards(new_buffer, xr, yr, orr, state, players),
+                       reward_f * fac + self.get_rewards(new_buffer, x, y, orientation, state, players))
 
     #TODO: what is the reward for shooting another player?
     #returns the absolute value of the shot player's score
-    def get_fire_state(self, state, orientation):
+    def get_fire_state(self, orientation, players):
         target_dist = 10
         score_shot_player = 0
-        #loop through the whole state
-        for i in range(len(state)):
-            for j in range(len(state[i])):
-                #if a cell has a negative number this is another player
-                if state[i][j] < 0:
-                    #check if i can shoot this player and collect the reward
-                    if orientation == 'right' and i == 7:
-                        if ((j - 7) > 0) and (j - 7) < target_dist:
-                            score_shot_player = state[i][j]
-                            target_dist = j - 7
-                    elif orientation == 'left' and i == 7:
-                        if ((j - 7) < 0) and (abs(7 - j) < target_dist):
-                            score_shot_player = state[i][j]
-                            target_dist = 7 - j
-                    elif orientation == 'up' and j == 7:
-                        if ((i - 7) < 0) and (i - 7) < target_dist:
-                            score_shot_player = state[i][j]
-                            target_dist = i - 7
-                    elif orientation == 'down' and j == 7:
-                        if ((i - 7) > 0) and (7 - i) < target_dist:
-                            score_shot_player = state[i][j]
-                            target_dist = 7 - i
-        reward = -score_shot_player
+        # loop through the whole state
+        for player in players:
+            i = player["location"][0]
+            j = player["location"][1]
+            # if a cell has a negative number this is another player
+            # check if i can shoot this player and collect the reward
+            if orientation == 'right' and i == 7:
+                if ((j - 7) > 0) and (j - 7) < target_dist:
+                    score_shot_player = player["score"]
+                    target_dist = j - 7
+            elif orientation == 'left' and i == 7:
+                if ((j - 7) < 0) and (abs(7 - j) < target_dist):
+                    score_shot_player = player["score"]
+                    target_dist = 7 - j
+            elif orientation == 'up' and j == 7:
+                if ((i - 7) < 0) and (i - 7) < target_dist:
+                    score_shot_player = player["score"]
+                    target_dist = i - 7
+            elif orientation == 'down' and j == 7:
+                if ((i - 7) > 0) and (7 - i) < target_dist:
+                    score_shot_player = player["score"]
+                    target_dist = 7 - i
+        reward = score_shot_player / 1000
         return reward
 
     def get_left_state(self, state, x, y, orientation):
