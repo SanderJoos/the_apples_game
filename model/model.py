@@ -17,7 +17,7 @@ DISCOUNT = 0.95
 
 NUMBER_OF_BUFFERSLICES = 400
 BATCHSIZE = 10
-MODELNAME = "model_exploration.h5"
+MODELNAME = "model.h5"
 
 class HarvestModel:
 
