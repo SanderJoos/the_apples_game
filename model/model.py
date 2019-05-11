@@ -38,7 +38,7 @@ class HarvestModel:
         model.add(leaky)
         model.add(Dense(10))
         model.add(leaky)
-        model.add(Dense(3))
+        model.add(Dense(4))
         model.add(leaky)
         adam = Adam(lr=LEARNING_RATE)
         model.compile(adam, 'mae')
@@ -67,7 +67,7 @@ class HarvestModel:
             self.model.save(MODELNAME)
         # nb_of_fits = int((len(buffer) / 10) + 1)
         inp = np.zeros((NUMBER_OF_BUFFERSLICES, 225))
-        predictions = np.zeros((NUMBER_OF_BUFFERSLICES, 3))
+        predictions = np.zeros((NUMBER_OF_BUFFERSLICES, 4))
         batchind = 0
         for i in range(NUMBER_OF_BUFFERSLICES):
             index = randint(0, len(buffer) - 7)
@@ -89,14 +89,17 @@ class HarvestModel:
         xl, yl, orl, reward_l = self.get_left_state(state, 7, 7, orientation)
         xm, ym, orm, reward_m = self.get_move_state(state, 7, 7, orientation)
         xr, yr, orr, reward_r = self.get_right_state(state, 7, 7, orientation)
-        reward = np.zeros((1, 3))
+        reward_f = self.get_fire_state(state, orientation)
+        reward = np.zeros((1, 4))
         new_buffer = bufferslice[1:]
         left_reward = reward_l * DISCOUNT + self.get_rewards(new_buffer, xl, yl, orl, state)
         move_reward = reward_m * DISCOUNT + self.get_rewards(new_buffer, xm, ym, orm, state)
         right_reward = reward_r * DISCOUNT + self.get_rewards(new_buffer, xr, yr, orr, state)
+        fire_reward = reward_f * DISCOUNT + self.get_rewards(new_buffer, 7, 7, orientation, state)
         reward[0][0] = left_reward
         reward[0][1] = move_reward
         reward[0][2] = right_reward
+        reward[0][3] = fire_reward
         # reward[0] = self.softmax(reward[0])
         return reward
 
@@ -108,10 +111,42 @@ class HarvestModel:
             xl, yl, orl, reward_l = self.get_left_state(state, x, y, orientation)
             xm, ym, orm, reward_m = self.get_move_state(state, x, y, orientation)
             xr, yr, orr, reward_r = self.get_right_state(state, x, y, orientation)
+            reward_f = self.get_fire_state(state, orientation)
             new_buffer = bufferslice[1:]
             return max(reward_l * fac + self.get_rewards(new_buffer, xl, yl, orl, state),
                        reward_m * fac + self.get_rewards(new_buffer, xm, ym, orm, state),
-                       reward_r * fac + self.get_rewards(new_buffer, xr, yr, orr, state))
+                       reward_r * fac + self.get_rewards(new_buffer, xr, yr, orr, state),
+                       reward_f * fac + self.get_rewards(new_buffer, x, y, orientation, state))
+
+    #TODO: what is the reward for shooting another player?
+    #returns the absolute value of the shot player's score
+    def get_fire_state(self, state, orientation):
+        target_dist = 10
+        score_shot_player = 0
+        #loop through the whole state
+        for i in range(len(state)):
+            for j in range(len(state[i])):
+                #if a cell has a negative number this is another player
+                if state[i][j] < 0:
+                    #check if i can shoot this player and collect the reward
+                    if orientation == 'right' and i == 7:
+                        if ((j - 7) > 0) and (j - 7) < target_dist:
+                            score_shot_player = state[i][j]
+                            target_dist = j - 7
+                    elif orientation == 'left' and i == 7:
+                        if ((j - 7) < 0) and (abs(7 - j) < target_dist):
+                            score_shot_player = state[i][j]
+                            target_dist = 7 - j
+                    elif orientation == 'up' and j == 7:
+                        if ((i - 7) < 0) and (i - 7) < target_dist:
+                            score_shot_player = state[i][j]
+                            target_dist = i - 7
+                    elif orientation == 'down' and j == 7:
+                        if ((i - 7) > 0) and (7 - i) < target_dist:
+                            score_shot_player = state[i][j]
+                            target_dist = 7 - i
+        reward = -score_shot_player
+        return reward
 
     def get_left_state(self, state, x, y, orientation):
         if orientation == 'left':

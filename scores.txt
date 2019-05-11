@@ -19,3 +19,10 @@ score Player: 2: 402
 score Player: 4: 368 
 score Player: 1: 606 
 score Player: 5: 344 
+score Player: 2: 629 
+score Player: 1: 637 
+score Player: 2: 374 
+score Player: 4: 204 
+score Player: 3: 357 
+score Player: 5: 191 
+score Player: 1: 375 
