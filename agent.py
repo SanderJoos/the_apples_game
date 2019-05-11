@@ -12,6 +12,8 @@ import logging
 import asyncio
 import websockets
 import json
+import numpy as np
+from model.model import HarvestModel
 from collections import defaultdict
 import random
 
