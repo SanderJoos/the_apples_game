@@ -1,0 +1,76 @@
+model_6:
+only circles
+
+model_learning_rate2:
+score Player: 1: 78 
+score Player: 3: 62 
+score Player: 4: 57 
+score Player: 5: 45 
+score Player: 2: 69 
+
+model_exploration_3:
+score Player: 3: 57 
+score Player: 2: 60 
+score Player: 4: 54 
+score Player: 5: 50 
+score Player: 1: 64
+
+
+score Player: 3: 397 
+score Player: 2: 402 
+score Player: 4: 368 
+score Player: 1: 606 
+score Player: 5: 344 
+score Player: 2: 629 
+score Player: 1: 637 
+score Player: 2: 374 
+score Player: 4: 204 
+score Player: 3: 357 
+score Player: 5: 191
+
+with shooting
+score Player: 1: 375 
+score Player: 2: 456 
+score Player: 1: 472 
+score Player: 2: 539 
+score Player: 1: 606 
+score Player: 2: 606 
+score Player: 1: 636 
+score Player: 2: 581 
+score Player: 1: 599 
+score Player: 2: 559 
+score Player: 1: 569 
+score Player: 2: 599 
+score Player: 1: 641 
+score Player: 2: 643 
+score Player: 1: 661 
+score Player: 2: 495 
+score Player: 1: 504 
+score Player: 2: 366 
+score Player: 1: 612 
+score Player: 2: 573 
+score Player: 1: 609 
+score Player: 2: 233 
+score Player: 1: 246 
+score Player: 2: 290 
+score Player: 1: 291 
+score Player: 2: 114 
+score Player: 1: 142 
+score Player: 2: 189 
+score Player: 1: 204 
+score Player: 1: 596 
+score Player: 2: 579 
+score Player: 1: 261 
+score Player: 2: 238 
+score Player: 1: 424 
+score Player: 2: 361 
+score Player: 1: 412 
+score Player: 2: 353 
+score Player: 2: 314 
+score Player: 1: 376 
+score Player: 1: 285 
+score Player: 2: 231 
+score Player: 1: 368 
+score Player: 2: 279 
+score Player: 1: 601 
+score Player: 2: 588 
