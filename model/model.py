@@ -12,11 +12,12 @@ import pickle
 from keras.activations import softmax
 from random import randint
 
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 DISCOUNT = 0.95
 
 NUMBER_OF_BUFFERSLICES = 400
 BATCHSIZE = 10
+MODELNAME = "model_exploration.h5"
 
 class HarvestModel:
 
@@ -41,8 +42,8 @@ class HarvestModel:
         model.add(leaky)
         adam = Adam(lr=LEARNING_RATE)
         model.compile(adam, 'mae')
-        if os.path.exists("model.h5"):
-            model = load_model("model.h5")
+        if os.path.exists(MODELNAME):
+            model = load_model(MODELNAME)
             print("loaded")
         self.model = model
         self.input_shape = (1, 225)
@@ -62,8 +63,8 @@ class HarvestModel:
 
     def train(self, buffer):
         lock.acquire()
-        if os.path.exists("model.h5"):
-            self.model.save("model.h5")
+        if os.path.exists(MODELNAME):
+            self.model.save(MODELNAME)
         # nb_of_fits = int((len(buffer) / 10) + 1)
         inp = np.zeros((NUMBER_OF_BUFFERSLICES, 225))
         predictions = np.zeros((NUMBER_OF_BUFFERSLICES, 3))
@@ -78,7 +79,7 @@ class HarvestModel:
             inp[batchind] = state.flatten()
             batchind += 1
         self.fit(inp, predictions)
-        self.model.save("model.h5")
+        self.model.save(MODELNAME)
         lock.release()
         print("ended fitting")
 
