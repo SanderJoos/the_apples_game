@@ -12,6 +12,7 @@ import logging
 import asyncio
 import websockets
 import json
+import time
 import numpy as np
 from model.model import HarvestModel
 from collections import defaultdict
@@ -198,7 +199,7 @@ async def handler(websocket, path):
                                                     nb_cols)
                 if msg["player"] == 1:
                     # Start the game
-                    nm = games[game].next_action()
+                    nm = games[game].get_move()
                     print('nm = {}'.format(nm))
                     if nm is None:
                         # Game over
@@ -217,7 +218,10 @@ async def handler(websocket, path):
                 movecount = movecount + 1
                 if msg["nextplayer"] in games[game].player:
                     # Compute your move
-                    nm = games[game].next_action()
+                    player_number = msg["nextplayer"]
+                    apples = msg["apples"]
+                    players = msg["players"]
+                    nm = games[game].next_action(player_number, players, apples)
                     if nm is None:
                         # Game over
                         logger.info("Game over")
