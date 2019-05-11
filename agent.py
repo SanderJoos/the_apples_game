@@ -2,24 +2,18 @@
 # encoding: utf-8
 """
 agent.py
-Template for the Machine Learning Project course at KU Leuven (2018-2019)
-of Karl Tuys and Wannes Meert.
-Copyright (c) 2019 KU Leuven. All rights reserved.
+Template for the Machine Learning Project course at KU Leuven (2017-2018)
+of Hendrik Blockeel and Wannes Meert.
+Copyright (c) 2018 KU Leuven. All rights reserved.
 """
 import sys
 import argparse
 import logging
 import asyncio
-import time
-
 import websockets
 import json
-from model.model import HarvestModel
 from collections import defaultdict
 import random
-import numpy as np
-import os
-import pickle
 
 
 logger = logging.getLogger(__name__)
@@ -30,12 +24,28 @@ DISCOUNT = 0.9
 EXPLORATION_REDUCTION = 0.995
 EXPLORATION = True
 
-
 class Agent:
-
+    """Example Dots and Boxes agent implementation base class.
+    It returns a random next move.
+    A Agent object should implement the following methods:
+    - __init__
+    - add_player
+    - register_action
+    - next_action
+    - end_game
+    This class does not necessarily use the best data structures for the
+    approach you want to use.
+    """
     def __init__(self, player, nb_rows, nb_cols):
+        """Create Dots and Boxes agent.
+        :param player: Player number, 1 or 2
+        :param nb_rows: Rows in grid
+        :param nb_cols: Columns in grid
+        """
         self.player = {player}
         self.ended = False
+        self.nb_rows = nb_rows
+        self.nb_cols = nb_cols
 
         # this is intentional to work with previous error (no need to
         # adjust all other code)
@@ -58,6 +68,7 @@ class Agent:
         self.pred = np.zeros((1, 4))
 
     def add_player(self, player):
+        """Use the same agent for multiple players."""
         self.player.add(player)
 
     def register_action(self, player_number, players, apples):
@@ -122,6 +133,7 @@ class Agent:
         self.exploration *= EXPLORATION_REDUCTION
         return move
 
+
     def end_game(self):
         self.ended = True
         for i in range(16):
@@ -159,9 +171,13 @@ class Agent:
 async def handler(websocket, path):
     logger.info("Start listening")
     game = None
+    movecount = 0
+    rewardmoves = []
     # msg = await websocket.recv()
     try:
         async for msg in websocket:
+            logger.info("< {}".format(msg))
+            logger.info("FIRST MESSAGE")
             try:
                 msg = json.loads(msg)
             except json.decoder.JSONDecodeError as err:
@@ -174,13 +190,13 @@ async def handler(websocket, path):
                 if msg["game"] in games:
                     games[msg["game"]].add_player(msg["player"])
                 else:
-                    nb_cols, nb_rows = msg["grid"]
+                    nb_rows, nb_cols = msg["grid"]
                     games[msg["game"]] = agentclass(msg["player"],
                                                     nb_rows,
                                                     nb_cols)
                 if msg["player"] == 1:
                     # Start the game
-                    nm = games[game].get_move()
+                    nm = games[game].next_action()
                     print('nm = {}'.format(nm))
                     if nm is None:
                         # Game over
@@ -196,12 +212,10 @@ async def handler(websocket, path):
 
             elif msg["type"] == "action":
                 # An action has been played
-                if msg["nextplayer"] in games[game].player and msg["nextplayer"] == msg["receiver"]:
+                movecount = movecount + 1
+                if msg["nextplayer"] in games[game].player:
                     # Compute your move
-                    player_number = msg["nextplayer"]
-                    apples = msg["apples"]
-                    players = msg["players"]
-                    nm = games[game].next_action(player_number, players, apples)
+                    nm = games[game].next_action()
                     if nm is None:
                         # Game over
                         logger.info("Game over")
@@ -210,11 +224,6 @@ async def handler(websocket, path):
                         'type': 'action',
                         'action': nm
                     }
-                elif msg["player"] in games[game].player:
-                    player_number = msg["player"]
-                    apples = msg["apples"]
-                    players = msg["players"]
-                    games[game].register_action(player_number, players, apples)
                 else:
                     answer = None
 
@@ -233,10 +242,31 @@ async def handler(websocket, path):
             if answer is not None:
                 print(answer)
                 await websocket.send(json.dumps(answer))
+                logger.info("> {}".format(answer))
+                logger.info("TESTJE")
+                try:
+                    sumofscores = 0
+                    for player in msg["players"]:
+                        sumofscores = sumofscores + player["score"]
+                    logger.info(msg["players"][0]["score"])
+                    logger.info("Movecount = " + str(movecount))
+                    logger.info("Utilitarian metric (Efficiency) = " + str(utilitarian_metric(sumofscores, movecount)))
+                    logger.info("Sustainability = " + str(sustainability(len(msg["players"]), movecount, sumofscores)))
+                    
+                except KeyError as keyerr:
+                    logger.info("No score found") 
     except websockets.exceptions.ConnectionClosed as err:
         logger.info("Connection closed")
     logger.info("Exit handler")
-
+    
+def utilitarian_metric(sumofscores, movecount):
+    return sumofscores/movecount
+        
+def sustainability(numberofagents, movecount, sumofscores):
+    if sumofscores == 0:
+        return 0
+    else:
+        return 1/numberofagents * (movecount/sumofscores)
 
 def start_server(port):
     server = websockets.serve(handler, 'localhost', port)
@@ -264,3 +294,6 @@ def main(argv=None):
 
 if __name__ == "__main__":
     sys.exit(main())
+    
+Agent().utilitarian_metric
+
