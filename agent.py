@@ -115,7 +115,7 @@ class Agent:
                 move = 'right'
             else:
                 move = 'fire'
-                self.pred[0] = [0, 0, 0, 1]
+                self.pred[0] = [0, 0, 0, -1]
         else:
             prob = self.model.predict(self.state)
             print(prob)

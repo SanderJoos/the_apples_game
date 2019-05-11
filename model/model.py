@@ -132,21 +132,21 @@ class HarvestModel:
             # check if i can shoot this player and collect the reward
             if orientation == 'right' and i == my_i:
                 if ((j - my_j) > 0) and (j - my_j) < target_dist:
-                    score_shot_player = player["score"]
+                    score_shot_player = -1
                     target_dist = j - my_j
             elif orientation == 'left' and i == my_i:
                 if ((j - my_j) < 0) and (abs(my_j - j) < target_dist):
-                    score_shot_player = player["score"]
+                    score_shot_player = -1
                     target_dist = my_j - j
             elif orientation == 'up' and j == my_j:
                 if ((i - my_i) < 0) and (i - my_i) < target_dist:
-                    score_shot_player = player["score"]
+                    score_shot_player = -1
                     target_dist = i - my_i
             elif orientation == 'down' and j == my_i:
                 if ((i - my_i) > 0) and (my_i - i) < target_dist:
-                    score_shot_player = player["score"]
+                    score_shot_player = -1
                     target_dist = my_i - i
-        reward = - score_shot_player
+        reward = score_shot_player
         return reward
 
     def get_left_state(self, state, x, y, orientation):
