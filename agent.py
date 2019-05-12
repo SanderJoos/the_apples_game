@@ -65,7 +65,7 @@ class Agent:
         self.reward, self.next_state = self.get_environment(player_number, players, apples)
         if not self.action == -100:
             dic = {"state": self.state, "action": self.action, "reward": self.reward,
-                   "discount": self.discount, "next_state": self.next_state, "best_move": self.best_move,
+                   "discount": self.discount, "next_state": self.next_state,
                    "orientation": self.orientation, "max_reward": self.max_reward, "predict": self.pred,
                    "players": players, "player_number": player_number}
             self.buffer.append(dic)
@@ -75,7 +75,6 @@ class Agent:
     def next_action(self, player_number, players, apples):
         self.state = self.build_state(player_number, players, apples)
         player = players[player_number - 1]
-        self.best_move = self.get_best_move(self.state, player["orientation"], players)
         self.orientation = player["orientation"]
         move = self.get_move()
         if move == 'left':
@@ -90,54 +89,23 @@ class Agent:
             self.action = 0
         return move
 
-    def do_shoot(self, state, orientation):
-        # loop through the whole state
-        for i in range(len(state)):
-            for j in range(len(state[i])):
-                # if a cell has a negative number this is another player
-                if state[i][j] < 0:
-                    # check if i can shoot this player and collect the reward
-                    if orientation == 'right' and i == 7:
-                        if ((j - 7) > 0):
-                            return True
-                    elif orientation == 'left' and i == 7:
-                        if ((j - 7) < 0):
-                            return True
-                    elif orientation == 'up' and j == 7:
-                        if ((i - 7) < 0):
-                            return True
-                    elif orientation == 'down' and j == 7:
-                        if ((i - 7) > 0):
-                            return True
-
     def get_move(self):
         rnd = random.random()
         print("exploration chance: ", self.exploration)
         if EXPLORATION and rnd <= self.exploration:
             rnd = random.random()
-            if self.do_shoot(self.state, self.orientation):
-                if rnd <= 0.25:
-                    self.pred[0] = [1, 0, 0, 0]
-                    move = 'left'
-                elif rnd <= 0.25:
-                    self.pred[0] = [0, 1, 0, 0]
-                    move = 'move'
-                elif rnd <= 0.75:
-                    self.pred[0] = [0, 0, 1, 0]
-                    move = 'right'
-                else:
-                    self.pred[0] = [0, 0, 0, 1]
-                    move = 'fire'
+            if rnd <= 0.25:
+                self.pred[0] = [1, 0, 0, 0]
+                move = 'left'
+            elif rnd <= 0.25:
+                self.pred[0] = [0, 1, 0, 0]
+                move = 'move'
+            elif rnd <= 0.75:
+                self.pred[0] = [0, 0, 1, 0]
+                move = 'right'
             else:
-                if rnd <= 0.33:
-                    self.pred[0] = [1, 0, 0, 0]
-                    move = 'left'
-                elif rnd <= 0.66:
-                    self.pred[0] = [0, 1, 0, 0]
-                    move = 'move'
-                elif rnd <= 1:
-                    self.pred[0] = [0, 0, 1, 0]
-                    move = 'right'
+                self.pred[0] = [0, 0, 0, -1]
+                move = 'fire'
         else:
             prob = self.model.predict(self.state)
             print(prob)
@@ -164,97 +132,6 @@ class Agent:
 
     def get_key(self, elem):
         return elem[0]
-
-    def get_best_move(self, state, orientation, players):
-        return_list = []
-        left_reward = self.get_left_reward(state, orientation)
-        return_list.append((left_reward, "left"))
-        right_reward = self.get_right_reward(state, orientation)
-        return_list.append((right_reward, "right"))
-        move_reward = self.get_move_reward(state, orientation)
-        return_list.append((move_reward, "move"))
-        fire_reward = self.get_fire_reward(orientation, players)
-        return_list.append((fire_reward, "fire"))
-
-        return_list.sort(key=self.get_key, reverse=True)
-        return return_list[0][0]
-        # if left_reward > right_reward:
-        #     if left_reward > move_reward:
-        #         if left_reward > fire_reward:
-        #             self.max_reward = left_reward
-        #             return 'left'
-        #
-        #     else:
-        #         self.max_reward = move_reward
-        #         return 'move'
-        #         return 'move'
-        # else:
-        #     if right_reward > move_reward:
-        #         self.max_reward = right_reward
-        #         return 'right'
-        #     else:
-        #         self.max_reward = move_reward
-        #         return 'move'
-
-    # TODO: what is the reward for shooting another player?
-    # returns the absolute value of the shot player's score
-    def get_fire_reward(self, orientation, players):
-        target_dist = 10
-        score_shot_player = 0
-        # loop through the whole state
-        for player in players:
-            i = player["location"][0]
-            j = player["location"][1]
-            # if a cell has a negative number this is another player
-            # check if i can shoot this player and collect the reward
-            if orientation == 'right' and i == 7:
-                if ((j - 7) > 0) and (j - 7) < target_dist:
-                    score_shot_player = player["score"]
-                    target_dist = j - 7
-            elif orientation == 'left' and i == 7:
-                if ((j - 7) < 0) and (abs(7 - j) < target_dist):
-                    score_shot_player = player["score"]
-                    target_dist = 7 - j
-            elif orientation == 'up' and j == 7:
-                if ((i - 7) < 0) and (i - 7) < target_dist:
-                    score_shot_player = player["score"]
-                    target_dist = i - 7
-            elif orientation == 'down' and j == 7:
-                if ((i - 7) > 0) and (7 - i) < target_dist:
-                    score_shot_player = player["score"]
-                    target_dist = 7 - i
-        reward = score_shot_player / 1000
-        return reward
-
-    def get_left_reward(self, state, orientation):
-        if orientation == 'left':
-            return state[8][7]
-        elif orientation == 'right':
-            return state[6][7]
-        elif orientation == 'down':
-            return state[7][8]
-        else:
-            return state[7][6]
-
-    def get_move_reward(self, state, orientation):
-        if orientation == 'left':
-            return state[7][6]
-        elif orientation == 'right':
-            return state[7][8]
-        elif orientation == 'down':
-            return state[8][7]
-        else:
-            return state[6][7]
-
-    def get_right_reward(self, state, orientation):
-        if orientation == 'left':
-            return state[6][7]
-        elif orientation == 'right':
-            return state[8][7]
-        elif orientation == 'down':
-            return state[7][6]
-        else:
-            return state[7][8]
 
     def build_state(self, player_number, players, apples):
         representation = np.zeros((15, 15))
