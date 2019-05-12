@@ -29,7 +29,7 @@ class HarvestModel:
         leaky = LeakyReLU()
         K.set_session(sess)
         model = Sequential()
-        model.add(Dense(225, input_shape=self.input_shape))
+        model.add(Dense(225, input_shape=(225,)))
         model.add(leaky)
         model.add(Dense(150))
         model.add(Dense(100))
@@ -37,7 +37,7 @@ class HarvestModel:
         model.add(Dense(10))
         model.add(Dense(4))
         adam = Adam(lr=LEARNING_RATE)
-        model.compile(adam, 'mae')
+        model.compile(adam, 'mse')
         if os.path.exists(MODELNAME):
             model = load_model(MODELNAME)
             print("loaded")
