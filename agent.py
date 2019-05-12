@@ -170,7 +170,6 @@ async def handler(websocket, path):
     try:
         async for msg in websocket:
             logger.info("< {}".format(msg))
-            logger.info("FIRST MESSAGE")
             try:
                 msg = json.loads(msg)
             except json.decoder.JSONDecodeError as err:
@@ -244,7 +243,6 @@ async def handler(websocket, path):
                 print(answer)
                 await websocket.send(json.dumps(answer))
                 logger.info("> {}".format(answer))
-                logger.info("TESTJE")
                 try:
                     sumofscores = 0
                     for player in msg["players"]:

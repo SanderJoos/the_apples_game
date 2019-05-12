@@ -29,18 +29,13 @@ class HarvestModel:
         leaky = LeakyReLU()
         K.set_session(sess)
         model = Sequential()
-        model.add(Dense(225))
+        model.add(Dense(225, input_shape=self.input_shape))
         model.add(leaky)
         model.add(Dense(150))
-        model.add(leaky)
         model.add(Dense(100))
-        model.add(leaky)
         model.add(Dense(50))
-        model.add(leaky)
         model.add(Dense(10))
-        model.add(leaky)
         model.add(Dense(4))
-        model.add(leaky)
         adam = Adam(lr=LEARNING_RATE)
         model.compile(adam, 'mae')
         if os.path.exists(MODELNAME):
@@ -53,18 +48,14 @@ class HarvestModel:
     def predict(self, env):
         input = np.zeros(self.input_shape)
         input[0] = env.flatten()
-        # K.get_session().run(tf.global_variables_initializer())
         return self.model.predict(input)
 
     def fit(self, state, pred):
-        # K.get_session().run(tf.global_variables_initializer())
         self.model.fit(state, pred, batch_size=BATCHSIZE)
 
     def train(self, buffer):
-        lock.acquire()
         if os.path.exists(MODELNAME):
             self.model.save(MODELNAME)
-        # nb_of_fits = int((len(buffer) / 10) + 1)
         inp = np.zeros((NUMBER_OF_BUFFERSLICES, 225))
         predictions = np.zeros((NUMBER_OF_BUFFERSLICES, 4))
         batchind = 0
@@ -79,7 +70,6 @@ class HarvestModel:
             batchind += 1
         self.fit(inp, predictions)
         self.model.save(MODELNAME)
-        lock.release()
         print("ended fitting")
 
     def get_best_prediction(self, bufferslice):

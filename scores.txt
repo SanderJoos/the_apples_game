@@ -82,3 +82,7 @@ score Player: 2: 235
 score Player: 1: 371 
 score Player: 1: 236 
 score Player: 2: 0 
+score Player: 1: 486 
+score Player: 2: 0 
+score Player: 1: 588 
+score Player: 2: 189 
