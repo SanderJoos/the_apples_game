@@ -26,9 +26,9 @@ games = {}
 agentclass = None
 
 DISCOUNT = 0.9
-EXPLORATION_REDUCTION = 0.995
-EXPLORATION = True
-
+EXPLORATION_REDUCTION = 0.98
+EXPLORATION = False
+TRAIN = False
 
 class Agent:
 
@@ -52,6 +52,7 @@ class Agent:
         self.state = np.zeros((15, 15))
         self.next_state = np.zeros((15, 15))
         self.discount = DISCOUNT
+        self.best_move = ''
         self.best_move = ''
         self.orientation = ''
         self.max_reward = -100
@@ -125,13 +126,12 @@ class Agent:
 
     def end_game(self):
         self.ended = True
-        for i in range(16):
-            if i in self.player:
-                time.sleep(i * 10)
-        self.model.train(self.buffer)
+        if self.TRAIN == True:
+            for i in range(16):
+                if i in self.player:
+                    time.sleep(i * 20)
+            self.model.train(self.buffer)
 
-    def get_key(self, elem):
-        return elem[0]
 
     def build_state(self, player_number, players, apples):
         representation = np.zeros((15, 15))
