@@ -126,7 +126,7 @@ class Agent:
 
     def end_game(self):
         self.ended = True
-        if self.TRAIN == True:
+        if TRAIN:
             for i in range(16):
                 if i in self.player:
                     time.sleep(i * 20)
